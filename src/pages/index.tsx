@@ -1,134 +1,71 @@
-import { candidatesData } from "@/common/candidates-mock";
-import { useCallback, useState } from "react";
+import Image from "next/image";
 
-interface WorkHistoryInterface {
-  company: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-}
+import { useSearchCandidates } from "@/hooks/useSearchCandidates";
+import { CandidateCard } from "@/components/CandidateCard";
 
-interface CandidateInterface {
-  firstName: string;
-  lastName: string;
-  location: string;
-  workHistory: WorkHistoryInterface[];
-}
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
-  const [query, setQuery] = useState("");
-  const [candidates, setCandidates] = useState<CandidateInterface[]>([]);
-  const [selectedCandidates, setSelectedCandidates] = useState<
-    CandidateInterface[]
-  >([]);
-
-  const debounce = (callback: Function, delay: number) => {
-    // type it
-    let timer: any;
-
-    return function (...args: any) {
-      clearTimeout(timer);
-
-      timer = setTimeout(() => {
-        callback(...args);
-      }, delay);
-    };
-  };
-
-  const getData = (query: string): Promise<CandidateInterface[]> =>
-    new Promise((reslove) => {
-      setTimeout(() => {
-        const filteredData = candidatesData.filter((candidate) => {
-          const fullName = `${candidate.firstName} ${candidate.lastName}`;
-
-          return fullName.toLowerCase().includes(query.toLowerCase());
-        });
-
-        reslove(filteredData);
-      }, 250);
-    });
-
-  const debouncedGetData = useCallback(
-    debounce(async (query: string) => {
-      const data = await getData(query);
-
-      console.log(query);
-
-      const filteredData = data.filter(
-        (candidate) => !selectedCandidates.includes(candidate)
-      );
-
-      setCandidates(filteredData);
-    }, 150),
-    [selectedCandidates]
-  );
-
-  const handleChange = (query: string) => {
-    setQuery(query);
-
-    if (!!query) {
-      debouncedGetData(query);
-    } else {
-      setCandidates([]);
-    }
-  };
-
-  const handleAddCandidate = (candidate: CandidateInterface) => {
-    setSelectedCandidates((prevCandidates) => [...prevCandidates, candidate]);
-
-    setCandidates([]);
-    setQuery("");
-  };
-
-  // const calculateDurationAndSort = (workHistories: WorkHistoryInterface[]) => {
-  //   const reducedWorkHistory = workHistories.reduce((acc, history) => {
-  //     const start = new Date(history.startDate);
-  //     const end = new Date(history.endDate);
-  //     const duration = end.getDate() - start.getDate();
-  //   }, []);
-  // };
+  const {
+    handleChange,
+    query,
+    candidates,
+    handleAddCandidate,
+    selectedCandidates,
+    handleDeleteCandidate,
+  } = useSearchCandidates();
 
   return (
-    <main className={`w-full p-16`}>
-      <div className={`mb-10`}>
-        <input
-          onChange={(e) => handleChange(e.currentTarget.value)}
-          value={query}
-          className={`bg-gray-500 w-full`}
-          type="text"
+    <main className={`w-full ${inter.className}`}>
+      <div className={`py-3 px-5`}>
+        <Image
+          src="/assets/logo.svg"
+          alt="logo"
+          width={109}
+          height={34}
+          priority
         />
-
-        <div>
-          {!!candidates?.length &&
-            candidates.map((candidate, index) => (
-              <div
-                onClick={() => handleAddCandidate(candidate)}
-                key={index}
-              >{`${candidate.firstName} ${candidate.lastName}`}</div>
-            ))}
-        </div>
       </div>
 
       <div>
-        <h3>Selected Candidates</h3>
+        <div className={`py-4 px-5 border-y border-gray-300	`}>
+          <p className={`pb-1 text-xs	font-semibold`}>Search</p>
 
-        <div>
-          {!!selectedCandidates?.length &&
-            selectedCandidates.map((candidate, index) => (
-              <div key={index}>
-                <h2>{`${candidate.firstName} ${candidate.lastName}`}</h2>
-                <h3>{candidate.location}</h3>
-                <div>
-                  {candidate.workHistory.map((history, index) => (
-                    <div key={index}>
-                      <p>{history.title}</p>
-                      <p>{history.company}</p>
-                      <p>{history.company}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+          <div
+            className={`relative before:content-[url('/assets/stars.svg')] before:absolute before:inset-1.5 before:w-7`}
+          >
+            <input
+              onChange={(e) => handleChange(e.currentTarget.value)}
+              value={query}
+              className={`bg-no-repeat w-full p-2 pl-10 border rounded border-gray-300`}
+              type="text"
+              placeholder="Michael Jordan..."
+            />
+          </div>
+
+          {!!candidates?.length && (
+            <ul className={`absolute p-4 bg-white w-full`}>
+              {candidates.map((candidate, index) => (
+                <li
+                  onClick={() => handleAddCandidate(candidate)}
+                  key={index}
+                  className={`p-2 cursor-pointer`}
+                >{`${candidate.firstName} ${candidate.lastName}`}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className={`p-5 bg-gray-50 h-screen`}>
+          {selectedCandidates.map((candidate, index) => (
+            <CandidateCard
+              key={index}
+              candidate={candidate}
+              handleDeleteCandidate={handleDeleteCandidate}
+            />
+          ))}
         </div>
       </div>
     </main>
